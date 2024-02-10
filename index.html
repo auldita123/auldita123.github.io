@@ -3,20 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portofolio</title>
+  <title>Portfolio</title>
   <!-- Bootstrap CSS CDN -->
   <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
   <!-- Font Awesome CDN -->
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css" rel="stylesheet">
   <!-- Custom CSS -->
   <link rel="stylesheet" href="style.css">
+  <style>
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+      }
+      to {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes slideInFromTop {
+      from {
+        transform: translateY(-50%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    @keyframes bounceIn {
+      from {
+        transform: translateY(-50%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    /* Menambahkan animasi untuk gambar di bagian "About" */
+    #about img {
+      animation: scaleIn 1s ease;
+    }
+
+    /* Menambahkan animasi untuk kartu di bagian "Portfolio" */
+    #portfolio .card {
+      animation: slideInFromTop 1s ease;
+    }
+
+    /* Menambahkan animasi untuk formulir di bagian "Contact" */
+    #contact form {
+      animation: bounceIn 1s ease;
+    }
+
+    /* Menambahkan animasi untuk judul di bagian "Portfolio" dan "Contact" */
+    #portfolio h2, #contact h2 {
+      animation: fadeIn 1s ease;
+    }
+
+    /* Menambahkan animasi untuk footer */
+    footer {
+      animation: fadeIn 1s ease;
+    }
+
+    /* Tambahkan animasi untuk muncul saat di-scroll */
+    .animate-scroll {
+      opacity: 0;
+      transform: translateY(50px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+
+    .animate-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+  
+  <script>
+    // Tambahkan script untuk menangani animasi saat di-scroll
+    document.addEventListener("DOMContentLoaded", function () {
+      const animateElements = document.querySelectorAll(".animate-scroll");
+
+      function checkVisibility() {
+        animateElements.forEach(function (element) {
+          const windowHeight = window.innerHeight;
+          const elementTop = element.getBoundingClientRect().top;
+          const isVisible = (elementTop + 50) < windowHeight;
+
+          if (isVisible) {
+            element.classList.add("animate-visible");
+          }
+        });
+      }
+
+      window.addEventListener("scroll", checkVisibility);
+      window.addEventListener("resize", checkVisibility);
+      checkVisibility();
+    });
+  </script>
 </head>
 <body>
 
   <!-- Navbar -->
   <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container">
-      <a class="navbar-brand" href="#">Portofolio</a>
+      <a class="navbar-brand" href="#">Portfolio</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -38,26 +130,28 @@
   </nav>
 
   <!-- About Section -->
-<section id="about" class="py-5">
+<section id="about" class="py-5 animate-scroll">
   <div class="container">
-    <div class="row">
-      <div class="col-md-6">
+    <div class="row align-items-center">
+      <div class="col-md-4 mb-4 text-center">
         <!-- Menampilkan foto profil -->
         <img src="https://via.placeholder.com/200" alt="Profile Picture" class="img-fluid rounded-circle mb-4">
       </div>
-      <div class="col-md-6">
+      <div class="col-md-8">
         <h2 class="mb-4">About Me</h2>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vestibulum massa nec dapibus tincidunt. Cras vel justo nec mi bibendum lobortis vitae sit amet lacus. Donec consequat, magna at posuere hendrerit, massa tortor scelerisque purus, at pharetra lorem elit sit amet risus.</p>
+        <!-- Tambahkan nama di sini -->
+        <h3 class="mb-3">M. Rizki Nasrulloh</h3>
+        <p>I am a graduate of SMK TKJ and currently pursuing a degree in Computer Engineering. I have a keen interest in software development, particularly in the fields of data science, AI, and ML. With a passion for leveraging technology to solve complex problems, I am dedicated to honing my skills and contributing meaningfully to the industry.</p>
         <!-- Panggilan untuk bertindak -->
-        <p class="mb-4">Jangan ragu untuk menghubungi saya jika Anda memiliki pertanyaan atau ingin berkolaborasi!</p>
-        <a href="#contact" class="btn btn-primary">Hubungi Saya</a>
+        <p class="mb-4">Don't hesitate to reach out if you have any questions or wish to collaborate!.</p>
+        <a href="#contact" class="btn btn-primary">Contact me</a>
       </div>
     </div>
   </div>
 </section>
 
   <!-- Portfolio Section -->
-  <section id="portfolio" class="py-5 bg-light">
+  <section id="portfolio" class="py-5 bg-light animate-scroll">
     <div class="container">
       <h2 class="text-center mb-4">Portfolio</h2>
       <div class="row">
@@ -96,7 +190,7 @@
   </section>
 
   <!-- Contact Section -->
-  <section id="contact" class="py-5">
+  <section id="contact" class="py-5 animate-scroll">
     <div class="container">
       <h2 class="text-center mb-4">Contact Me</h2>
       <div class="row">
@@ -122,9 +216,9 @@
   </section>
 
   <!-- Footer -->
-  <footer class="bg-dark text-white py-3 text-center">
+  <footer class="bg-dark text-white py-3 text-center animate-scroll">
     <div class="container">
-      &copy; 2024 Your Name
+      &copy; 2024 <a href="http://github.com/auldita123">auldita123</a>
     </div>
   </footer>
 
