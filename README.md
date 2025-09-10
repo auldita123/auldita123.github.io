@@ -1,5 +1,5 @@
-#========== Presentasi besok ==========
-##Code
+# ========== Presentasi besok ==========
+## Code
 Oke, saya akan buatkan kode program Python sederhana sesuai permintaan Anda.
 Setiap nomor akan saya buat **per file** dengan nama file berbeda. Semua menggunakan gambar `apel.png`.
 
@@ -205,7 +205,7 @@ plt.show()
 * Variabel `k` bisa diganti manual untuk negasi & brightness.
 
 Mau saya satukan semua kode dalam **1 file dengan menu pilihan (1–5)** supaya lebih praktis, atau Anda lebih suka **terpisah per file** seperti di atas?
-##Penjelasan
+## Penjelasan
 # Penjelasan lengkap — per poin, jelas dan terstruktur
 
 Bagus — di bawah ini saya jelaskan **dengan lengkap dan poin-per-poin** mengenai setiap operasi pada kode yang saya berikan sebelumnya. Saya akan menjelaskan **apa yang dilakukan**, **rumus matematisnya**, **catatan implementasi (dtype, overflow, OpenCV BGR, dll.)**, **cara menyesuaikan variabel `k`**, **cara menampilkan histogram**, dan **tips/edge cases**.
