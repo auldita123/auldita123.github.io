@@ -1,486 +1,631 @@
 # ========== Presentasi besok ==========
 ## Code
-Oke, saya akan buatkan kode program Python sederhana sesuai permintaan Anda.
-Setiap nomor akan saya buat **per file** dengan nama file berbeda. Semua menggunakan gambar `apel.png`.
-
-> Catatan:
->
-> * Semua operasi dasar akan menggunakan **OpenCV (`cv2`)**, **NumPy**, dan **Matplotlib**.
-> * Tidak menggunakan toolbox canggih, hanya rumus dasar dan manipulasi array.
-> * Histogram akan ditampilkan dengan diagram kartesius untuk setiap citra (asli dan hasil olahan).
-> * Untuk keperluan manipulasi channel, akan saya gunakan `cv2.split(img)`.
-
----
-
-## 📂 File 1: `1_rgb_to_grayscale.py`
+# File 1 — `1_rgb_to_grayscale.py`
 
 ```python
+# 1_rgb_to_grayscale.py
+# Baca "apel.png", konversi RGB -> Grayscale (dua metode: rata-rata atau luminosity)
+# Tampilkan citra asli + grayscale, serta histogram (diagram kartesius)
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Baca gambar
-img = cv2.imread("apel.png")
-b, g, r = cv2.split(img)
+# --- konfigurasi ---
+img_path = "apel.png"
+method = "lum"   # "avg" untuk rata-rata, "lum" untuk luminosity (0.3R + 0.6G + 0.1B)
 
-# Grayscale dengan rata-rata
-gray_avg = ((r + g + b) / 3).astype(np.uint8)
+# --- baca gambar (OpenCV baca BGR) ---
+img = cv2.imread(img_path)
+if img is None:
+    raise FileNotFoundError(f"Tidak dapat menemukan file: {img_path}")
 
-# Grayscale dengan luminositas
-gray_lum = (0.3 * r + 0.6 * g + 0.1 * b).astype(np.uint8)
+b, g, r = cv2.split(img)          # gunakan split seperti diminta
 
-# Tampilkan hasil
-plt.subplot(2, 2, 1), plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.title("Citra Asli")
-plt.subplot(2, 2, 2), plt.imshow(gray_avg, cmap='gray'), plt.title("Grayscale Rata-rata")
-plt.subplot(2, 2, 3), plt.imshow(gray_lum, cmap='gray'), plt.title("Grayscale Luminositas")
+# --- konversi ke grayscale ---
+if method == "avg":
+    gray = ((r.astype(np.float32) + g + b) / 3.0).round().astype(np.uint8)
+else:
+    # luminosity
+    gray = (0.3 * r + 0.6 * g + 0.1 * b).round().astype(np.uint8)
 
-# Histogram
-plt.figure()
-plt.hist(gray_avg.ravel(), bins=256, range=[0,256], color='gray')
-plt.title("Histogram Grayscale (Rata-rata)")
+# --- histogram data ---
+hist_r, _ = np.histogram(r.flatten(), bins=256, range=(0,255))
+hist_g, _ = np.histogram(g.flatten(), bins=256, range=(0,255))
+hist_b, _ = np.histogram(b.flatten(), bins=256, range=(0,255))
+hist_gray, bins = np.histogram(gray.flatten(), bins=256, range=(0,255))
+bins_centers = (bins[:-1] + bins[1:]) / 2
 
-plt.figure()
-plt.hist(gray_lum.ravel(), bins=256, range=[0,256], color='gray')
-plt.title("Histogram Grayscale (Luminositas)")
+# --- tampilkan hasil ---
+plt.figure(figsize=(12,6))
 
+plt.subplot(2,3,1)
+plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
+plt.title("Asli (RGB)")
+plt.axis('off')
+
+plt.subplot(2,3,2)
+plt.imshow(gray, cmap='gray')
+plt.title(f"Grayscale ({'rata-rata' if method=='avg' else 'luminosity'})")
+plt.axis('off')
+
+plt.subplot(2,3,4)
+plt.plot(bins_centers, hist_r, label='R')
+plt.plot(bins_centers, hist_g, label='G')
+plt.plot(bins_centers, hist_b, label='B')
+plt.title("Histogram Kanal Warna (R,G,B)")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+plt.legend()
+
+plt.subplot(2,3,5)
+plt.plot(bins_centers, hist_gray, label='Gray')
+plt.title("Histogram Grayscale")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+plt.tight_layout()
 plt.show()
+
+# simpan hasil grayscale
+cv2.imwrite("grayscale_1.png", gray)
+print("Selesai: 'grayscale_1.png' tersimpan.")
 ```
 
 ---
 
-## 📂 File 2: `2_negasi.py`
+# File 2 — `2_negasi_k.py`
 
 ```python
+# 2_negasi_k.py
+# Lakukan negasi pada citra: out = k - I
+# Catatan: sebelum negasi, ubah dulu ke grayscale (luminosity)
+# Tampilkan citra asli (grayscale), hasil negasi, dan histogram masing-masing
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Baca gambar
-img = cv2.imread("apel.png")
+img_path = "apel.png"
+k = 255   # ubah nilai k secara manual sesuai kebutuhan
+
+img = cv2.imread(img_path)
+if img is None:
+    raise FileNotFoundError(f"Tidak dapat menemukan file: {img_path}")
+
 b, g, r = cv2.split(img)
+# grayscale (luminosity)
+gray = (0.3 * r + 0.6 * g + 0.1 * b).round().astype(np.uint8)
 
-k = 255  # bisa diganti manual
-neg = k - img
+# negasi dengan k
+neg = (k - gray).astype(np.int16)   # sementara agar tidak overflow
+neg = np.clip(neg, 0, 255).astype(np.uint8)
 
-# Tampilkan hasil
-plt.subplot(1, 2, 1), plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.title("Citra Asli")
-plt.subplot(1, 2, 2), plt.imshow(cv2.cvtColor(neg, cv2.COLOR_BGR2RGB)), plt.title("Negasi")
+# histogram
+hist_gray, bins = np.histogram(gray.flatten(), bins=256, range=(0,255))
+hist_neg, _ = np.histogram(neg.flatten(), bins=256, range=(0,255))
+bins_centers = (bins[:-1] + bins[1:]) / 2
 
-# Histogram
-plt.figure()
-plt.hist(img.ravel(), bins=256, range=[0,256])
-plt.title("Histogram Asli")
+plt.figure(figsize=(10,5))
+plt.subplot(2,2,1)
+plt.imshow(gray, cmap='gray')
+plt.title("Grayscale (sebelum negasi)")
+plt.axis('off')
 
-plt.figure()
-plt.hist(neg.ravel(), bins=256, range=[0,256])
+plt.subplot(2,2,2)
+plt.imshow(neg, cmap='gray')
+plt.title(f"Negasi (k - I)  k={k}")
+plt.axis('off')
+
+plt.subplot(2,2,3)
+plt.plot(bins_centers, hist_gray)
+plt.title("Histogram Grayscale")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.subplot(2,2,4)
+plt.plot(bins_centers, hist_neg)
 plt.title("Histogram Negasi")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
 
+plt.tight_layout()
 plt.show()
+
+cv2.imwrite("negasi_k.png", neg)
+print("Selesai: 'negasi_k.png' tersimpan.")
 ```
 
 ---
 
-## 📂 File 3: `3_brightness.py`
+# File 3 — `3_brightness_k.py`
 
 ```python
+# 3_brightness_k.py
+# Ubah brightness: out = I + k  (k bisa negatif untuk meredupkan)
+# Gunakan grayscale terlebih dahulu (luminosity)
+# Tampilkan citra asli, hasil, dan histogram
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Baca gambar
-img = cv2.imread("apel.png")
+img_path = "apel.png"
+k = 40   # ubah manual; bisa negatif
 
-k = 50  # nilai brightness (bisa diganti manual)
-bright = cv2.add(img, k*np.ones(img.shape, dtype=np.uint8))
+img = cv2.imread(img_path)
+if img is None:
+    raise FileNotFoundError(f"Tidak dapat menemukan file: {img_path}")
 
-# Tampilkan hasil
-plt.subplot(1, 2, 1), plt.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB)), plt.title("Citra Asli")
-plt.subplot(1, 2, 2), plt.imshow(cv2.cvtColor(bright, cv2.COLOR_BGR2RGB)), plt.title("Brightness +k")
+b, g, r = cv2.split(img)
+gray = (0.3 * r + 0.6 * g + 0.1 * b).round().astype(np.uint8)
 
-# Histogram
-plt.figure()
-plt.hist(img.ravel(), bins=256, range=[0,256])
-plt.title("Histogram Asli")
+# brightness change
+bright = gray.astype(np.int16) + int(k)   # sementara tipe int untuk mencegah overflow
+bright = np.clip(bright, 0, 255).astype(np.uint8)
 
-plt.figure()
-plt.hist(bright.ravel(), bins=256, range=[0,256])
-plt.title("Histogram Brightness")
+# histogram
+hist_gray, bins = np.histogram(gray.flatten(), bins=256, range=(0,255))
+hist_bright, _ = np.histogram(bright.flatten(), bins=256, range=(0,255))
+bins_centers = (bins[:-1] + bins[1:]) / 2
 
+plt.figure(figsize=(10,5))
+plt.subplot(2,2,1)
+plt.imshow(gray, cmap='gray')
+plt.title("Grayscale (sebelum)")
+plt.axis('off')
+
+plt.subplot(2,2,2)
+plt.imshow(bright, cmap='gray')
+plt.title(f"Brightness I + k (k={k})")
+plt.axis('off')
+
+plt.subplot(2,2,3)
+plt.plot(bins_centers, hist_gray)
+plt.title("Histogram Sebelum")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.subplot(2,2,4)
+plt.plot(bins_centers, hist_bright)
+plt.title("Histogram Sesudah")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.tight_layout()
 plt.show()
+
+cv2.imwrite("brightness_k.png", bright)
+print("Selesai: 'brightness_k.png' tersimpan.")
 ```
 
 ---
 
-## 📂 File 4: `4_contrast_stretching.py`
+# File 4 — `4_contrast_stretching.py`
 
 ```python
+# 4_contrast_stretching.py
+# Contrast stretching sederhana: mapping linear dari [min, max] ke [0,255]
+# Ubah ke grayscale dulu (luminosity)
+# Tampilkan citra asli, hasil, dan histogram
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Baca gambar grayscale
-img = cv2.imread("apel.png", 0)
+img_path = "apel.png"
 
-# Rumus Contrast Stretching
-min_val = np.min(img)
-max_val = np.max(img)
-cs = ((img - min_val) / (max_val - min_val) * 255).astype(np.uint8)
+img = cv2.imread(img_path)
+if img is None:
+    raise FileNotFoundError(f"Tidak dapat menemukan file: {img_path}")
 
-# Tampilkan hasil
-plt.subplot(1, 2, 1), plt.imshow(img, cmap='gray'), plt.title("Citra Asli")
-plt.subplot(1, 2, 2), plt.imshow(cs, cmap='gray'), plt.title("Contrast Stretching")
+b, g, r = cv2.split(img)
+gray = (0.3 * r + 0.6 * g + 0.1 * b).round().astype(np.uint8)
 
-# Histogram
-plt.figure()
-plt.hist(img.ravel(), bins=256, range=[0,256], color='gray')
-plt.title("Histogram Asli")
+minI = gray.min()
+maxI = gray.max()
 
-plt.figure()
-plt.hist(cs.ravel(), bins=256, range=[0,256], color='gray')
-plt.title("Histogram Contrast Stretching")
+if maxI == minI:
+    stretched = gray.copy()
+else:
+    stretched = ((gray.astype(np.float32) - float(minI)) / (float(maxI - minI)) * 255.0)
+    stretched = np.clip(stretched.round(), 0, 255).astype(np.uint8)
 
+# histogram
+hist_gray, bins = np.histogram(gray.flatten(), bins=256, range=(0,255))
+hist_stretch, _ = np.histogram(stretched.flatten(), bins=256, range=(0,255))
+bins_centers = (bins[:-1] + bins[1:]) / 2
+
+plt.figure(figsize=(10,5))
+plt.subplot(2,2,1)
+plt.imshow(gray, cmap='gray')
+plt.title(f"Grayscale (min={minI}, max={maxI})")
+plt.axis('off')
+
+plt.subplot(2,2,2)
+plt.imshow(stretched, cmap='gray')
+plt.title("Contrast Stretching")
+plt.axis('off')
+
+plt.subplot(2,2,3)
+plt.plot(bins_centers, hist_gray)
+plt.title("Histogram Sebelum")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.subplot(2,2,4)
+plt.plot(bins_centers, hist_stretch)
+plt.title("Histogram Sesudah")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.tight_layout()
 plt.show()
+
+cv2.imwrite("contrast_stretching.png", stretched)
+print("Selesai: 'contrast_stretching.png' tersimpan.")
 ```
 
 ---
 
-## 📂 File 5: `5_histogram_equalization.py`
+# File 5 — `5_hist_equal_spec.py`
 
 ```python
+# 5_hist_equal_spec.py
+# Histogram equalization (manual) dan histogram specification (manual)
+# Gunakan grayscale terlebih dahulu (luminosity)
+# Tampilkan original, equalized, specified + histogram masing-masing
+
 import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Baca gambar grayscale
-img = cv2.imread("apel.png", 0)
+img_path = "apel.png"
 
-# Histogram Equalization
-heq = cv2.equalizeHist(img)
+img = cv2.imread(img_path)
+if img is None:
+    raise FileNotFoundError(f"Tidak dapat menemukan file: {img_path}")
 
-# Histogram Specification (ke citra referensi)
-ref = cv2.imread("apel.png", 0)  # contoh: pakai citra itu sendiri
-hist_ref, bins = np.histogram(ref.flatten(), 256, [0,256])
-cdf_ref = hist_ref.cumsum()
-cdf_ref = 255 * cdf_ref / cdf_ref[-1]
+b, g, r = cv2.split(img)
+gray = (0.3 * r + 0.6 * g + 0.1 * b).round().astype(np.uint8)
 
-hist_img, _ = np.histogram(img.flatten(), 256, [0,256])
-cdf_img = hist_img.cumsum()
-cdf_img = 255 * cdf_img / cdf_img[-1]
+# --- Histogram Equalization (manual) ---
+hist, bins = np.histogram(gray.flatten(), bins=256, range=(0,255))
+pdf = hist.astype(np.float64) / hist.sum()
+cdf = pdf.cumsum()
+map_eq = np.floor(255 * cdf).astype(np.uint8)   # mapping 0..255
 
-mapping = np.zeros(256, dtype=np.uint8)
-for i in range(256):
-    diff = np.abs(cdf_img[i] - cdf_ref)
-    mapping[i] = np.argmin(diff)
+equalized = map_eq[gray]   # apply mapping
 
-spec = mapping[img]
+# --- Histogram Specification (matching) ---
+# Kita buat target PDF secara programatik (contoh: Gaussian tertempat)
+x = np.arange(256)
+mu = 150.0
+sigma = 30.0
+target_pdf = np.exp(-0.5 * ((x - mu)/sigma)**2)
+target_pdf = target_pdf / target_pdf.sum()
+target_cdf = target_pdf.cumsum()
 
-# Tampilkan hasil
-plt.subplot(2, 2, 1), plt.imshow(img, cmap='gray'), plt.title("Citra Asli")
-plt.subplot(2, 2, 2), plt.imshow(heq, cmap='gray'), plt.title("Histogram Equalization")
-plt.subplot(2, 2, 3), plt.imshow(spec, cmap='gray'), plt.title("Histogram Specification")
+# Sumber cdf (dari grayscale asli)
+src_hist, _ = np.histogram(gray.flatten(), bins=256, range=(0,255))
+src_pdf = src_hist.astype(np.float64) / src_hist.sum()
+src_cdf = src_pdf.cumsum()
 
-# Histogram
-plt.figure()
-plt.hist(img.ravel(), bins=256, range=[0,256], color='gray')
-plt.title("Histogram Asli")
+# mapping spesifikasi: untuk setiap level r cari s sehingga src_cdf[r] ~ target_cdf[s]
+map_spec = np.zeros(256, dtype=np.uint8)
+for r in range(256):
+    # cari s minimal dimana target_cdf[s] >= src_cdf[r]
+    s = np.searchsorted(target_cdf, src_cdf[r])
+    if s > 255:
+        s = 255
+    map_spec[r] = s
 
-plt.figure()
-plt.hist(heq.ravel(), bins=256, range=[0,256], color='gray')
+specified = map_spec[gray]
+
+# --- histogram data ---
+bins_centers = (bins[:-1] + bins[1:]) / 2
+hist_orig, _ = np.histogram(gray.flatten(), bins=256, range=(0,255))
+hist_eq, _ = np.histogram(equalized.flatten(), bins=256, range=(0,255))
+hist_spec, _ = np.histogram(specified.flatten(), bins=256, range=(0,255))
+
+# --- tampilkan ---
+plt.figure(figsize=(12,8))
+
+plt.subplot(3,3,1)
+plt.imshow(gray, cmap='gray')
+plt.title("Original Grayscale")
+plt.axis('off')
+
+plt.subplot(3,3,2)
+plt.imshow(equalized, cmap='gray')
 plt.title("Histogram Equalization")
+plt.axis('off')
 
-plt.figure()
-plt.hist(spec.ravel(), bins=256, range=[0,256], color='gray')
-plt.title("Histogram Specification")
+plt.subplot(3,3,3)
+plt.imshow(specified, cmap='gray')
+plt.title("Histogram Specification (target Gaussian)")
+plt.axis('off')
 
+plt.subplot(3,3,4)
+plt.plot(bins_centers, hist_orig)
+plt.title("Histogram Original")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.subplot(3,3,5)
+plt.plot(bins_centers, hist_eq)
+plt.title("Histogram Equalized")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+plt.subplot(3,3,6)
+plt.plot(bins_centers, hist_spec)
+plt.title("Histogram Specified")
+plt.xlabel("Intensitas")
+plt.ylabel("Frekuensi")
+
+# tampilkan juga PDF target sebagai referensi
+plt.subplot(3,3,8)
+plt.plot(x, target_pdf)
+plt.title("Target PDF (normalisasi)")
+plt.xlabel("Intensitas")
+plt.ylabel("Prob.")
+
+plt.tight_layout()
 plt.show()
+
+cv2.imwrite("hist_equalized.png", equalized)
+cv2.imwrite("hist_specified.png", specified)
+print("Selesai: 'hist_equalized.png' dan 'hist_specified.png' tersimpan.")
 ```
 
 ---
 
-👉 Semua file di atas sederhana, sesuai aturan:
+## Catatan singkat (penting & sesuai permintaan)
 
-* Tidak pakai toolbox khusus, hanya `cv2`, `numpy`, `matplotlib`.
-* Histogram ditampilkan untuk setiap citra.
-* Path selalu `"apel.png"`.
-* Variabel `k` bisa diganti manual untuk negasi & brightness.
+* Semua skrip membaca file bernama `"apel.png"` dari direktori kerja. Pastikan file ada di folder yang sama saat menjalankan.
+* Saya memakai `cv2`, `numpy`, `matplotlib` sesuai saran. Tidak menggunakan toolbox eksternal lain.
+* Untuk pemisahan kanal saya menggunakan `cv2.split()` seperti diminta.
+* Nomor 2, 3, 4, 5 mengubah citra ke grayscale (luminosity) sebelum operasi sesuai perintah.
+* Variabel `k` pada file 2 dan 3 berada di bagian konfigurasi atas sehingga mudah diubah manual.
+* Kode dibuat sederhana, sedikit percabangan, tidak banyak definisi fungsi, mudah dibaca untuk praktikum.
+* Jika Anda ingin metode grayscale berbeda (mis. rata-rata), ubah `method` di file 1 atau sesuaikan konversi di file lain.
 
-Mau saya satukan semua kode dalam **1 file dengan menu pilihan (1–5)** supaya lebih praktis, atau Anda lebih suka **terpisah per file** seperti di atas?
+Kalau mau, saya bisa gabungkan semuanya menjadi satu menu interaktif (opsional) — tapi kalau praktikum Anda menginginkan file per nomor, format sekarang sudah sesuai. Mau saya tambahkan komentar langkah demi langkah atau contoh nilai `k` yang direkomendasikan?
+
 ## Penjelasan
-# Penjelasan lengkap — per poin, jelas dan terstruktur
+Berikut penjelasan lengkap, jelas, dan ber-point per operasi (1–5). Saya tulis dalam Bahasa Indonesia, setiap operasi dipisah agar mudah dibaca — termasuk tujuan, rumus, langkah implementasi (sesuai permintaan: pakai `cv2`, `numpy`, `matplotlib`, pakai `split`), catatan tipe data, batasan/kesalahan umum, dan saran parameter.
 
-Bagus — di bawah ini saya jelaskan **dengan lengkap dan poin-per-poin** mengenai setiap operasi pada kode yang saya berikan sebelumnya. Saya akan menjelaskan **apa yang dilakukan**, **rumus matematisnya**, **catatan implementasi (dtype, overflow, OpenCV BGR, dll.)**, **cara menyesuaikan variabel `k`**, **cara menampilkan histogram**, dan **tips/edge cases**.
+# 1. RGB → Grayscale
 
----
+**Tujuan**
 
-# 1) RGB → Grayscale (dua metode: rata-rata & luminositas)
+* Mengubah citra berwarna (3 kanal: R, G, B) menjadi citra intensitas tunggal (grayscale) untuk memudahkan operasi berikutnya.
 
-**Tujuan:** mengubah citra berwarna (RGB/BGR) menjadi citra intensitas tunggal (grayscale).
+**Metode / Rumus yang diminta**
 
-**Metode & rumus:**
+* Rata-rata: `I = (R + G + B) / 3`
+* Luminosity: `I = 0.3*R + 0.6*G + 0.1*B`
+  (Luminosity menimbang komponen hijau lebih besar karena mata manusia lebih sensitif terhadap hijau.)
 
-* **Rata-rata (Average):**
-  $I = \frac{R + G + B}{3}$
-  artinya, rata-rata ketiga kanal.
-* **Luminositas (weighted):**
-  $I = 0.3R + 0.6G + 0.1B$
-  (bobot umum yang memperhitungkan sensitivitas mata manusia terhadap hijau lebih kuat).
+**Langkah implementasi (ringkas)**
 
-**Implementasi (poin penting):**
+1. Baca gambar dengan `cv2.imread("apel.png")` → format BGR.
+2. Gunakan `b, g, r = cv2.split(img)` (diminta pakai `split`).
+3. Terapkan rumus (pakai `numpy` vectorized):
 
-* Gunakan `b, g, r = cv2.split(img)` untuk memisahkan channel. (`split()` sesuai permintaan Anda)
-* Jika `img` dibaca oleh OpenCV, format channel adalah **BGR**, bukan RGB. Saat menampilkan dengan Matplotlib, konversi `cv2.cvtColor(img, cv2.COLOR_BGR2RGB)` untuk tampilan warna yang benar.
-* Lakukan operasi pada array `numpy` lalu ubah hasil ke `np.uint8` dengan `.astype(np.uint8)`.
-* Hindari pembulatan tak sengaja: lakukan perhitungan sebagai `float` dulu, baru cast ke `uint8`.
-* Jika ingin hasil lebih akurat gunakan `np.round(...)` sebelum cast.
+   * rata-rata: `gray = ((r.astype(float) + g + b) / 3).round().astype(np.uint8)`
+   * luminosity: `gray = (0.3*r + 0.6*g + 0.1*b).round().astype(np.uint8)`
+4. Simpan: `cv2.imwrite("grayscale.png", gray)`.
+5. Tampilkan histogram: `numpy.histogram(gray.flatten(), bins=256, range=(0,255))` dan plot dengan `matplotlib` (diagram kartesius) menggunakan `plt.plot(bins_centers, counts)`.
 
-**Histogram:**
+**Catatan tipe data**
 
-* Untuk grayscale gunakan `plt.hist(gray.ravel(), bins=256, range=[0,256])`.
-* `ravel()` meratakan array 2D menjadi 1D (satu histogram intensitas).
+* Lakukan operasi dalam `float` atau `float32` lalu `round()` dan `astype(np.uint8)` untuk menghindari pembulatan negatif dan overflow.
 
-**Catatan praktis:**
+**Harapan visual / histogram**
 
-* Metode luminositas biasanya menghasilkan kontras dan persepsi visual lebih baik.
-* Kompleksitas: O(N)—memproses setiap piksel sekali.
+* Grayscale terdistribusi menurut intensitas campuran kanal; luminosity biasanya menghasilkan gambar lebih natural dibanding rata-rata.
 
 ---
 
-# 2) Operasi Negasi (dengan variabel `k` yang bisa diubah)
+# 2. Operasi Negasi (dengan variabel `k`)
 
-**Tujuan:** menghasilkan citra negatif (invers warna) dengan parameter `k` sehingga bisa diubah-ubah.
+**Tujuan**
 
-**Rumus umum:**
+* Membalikkan intensitas citra: titik gelap → terang dan terang → gelap, dengan konstanta `k` yang bisa diubah manual.
 
-* Negasi standar: $I' = 255 - I$ (untuk `uint8`).
-* Versi umum dengan k: $I' = k - I$ (di mana `k` biasanya 255 atau bisa diatur).
+**Rumus**
 
-**Implementasi (poin penting):**
+* `out = k - I`
+  (Biasanya `k = 255` untuk citra 8-bit sehingga `out = 255 - I`.)
 
-* Di kode: `k = 255` (default) → `neg = k - img`
-* Pastikan `img` bertipe `uint8`. Operasi `k - img` dengan `k` integer akan menghasilkan tipe `uint8` (hasil diklatkan sesuai tipe).
-* Jika `k` < 255, akan menghasilkan range intensitas baru (mis. `k=200` → nilai negatif mungkin tidak ada karena `uint8` wrap). Untuk menghindari wrap/underflow, gunakan `np.clip` atau konversi ke `int16` lalu clip:
+**Syarat awal**
 
-  ```python
-  neg = np.clip(k - img.astype(np.int16), 0, 255).astype(np.uint8)
-  ```
-* Untuk gambar warna, operasi berlaku per-channel (B, G, R) — `k - img` dioperasikan pada seluruh array 3-kanal.
+* **Wajib** ubah ke grayscale dulu (sesuai permintaan). Operasikan pada array grayscale.
 
-**Histogram:**
+**Langkah implementasi**
 
-* Bandingkan histogram asli vs histogram negasi. Histogram negasi akan terlihat “dibalik” posisi intensitasnya.
+1. Hitung `gray` sesuai langkah operasi 1.
+2. Tetapkan `k` di bagian konfigurasi (mis. `k = 255`).
+3. Hitung: `neg = k - gray.astype(np.int16)` (pakai tipe temp `int16` agar negatif tidak overflow).
+4. Clip dan konversi: `neg = np.clip(neg, 0, 255).astype(np.uint8)`.
+5. Simpan dan tampilkan citra dan histogram.
 
-**Catatan praktis:**
+**Catatan / Pitfalls**
 
-* `k=255` adalah standar. Jika ingin efek berbeda, ubah `k` bebas; perhatikan clipping.
-* Negasi tidak menambah detail—hanya membalik intensitas.
+* Gunakan `int16` atau `int32` saat operasi aritmetika sebelum `clip` untuk menghindari wraparound pada `uint8`.
+* Jika `k` lebih kecil dari 255 (mis. 200), hasil masih valid — intensitas akan ter-shift; namun visualnya berbeda (tidak “pembalikan penuh”).
 
----
+**Saran nilai `k`**
 
-# 3) Operasi Brightness (menggunakan variabel `k`)
+* Umumnya `k = 255`. Eksperimen: `k` di range `[0, 255]`. Jika `k` < 255, hasil tidak sepenuhnya invers penuh (tingkat kegelapan berubah).
 
-**Tujuan:** menaikkan atau menurunkan kecerahan citra.
+**Harapan histogram**
 
-**Rumus sederhana:**
-
-* Brightness additif: $I' = I + k$
-  Jika `k` positif → lebih terang; `k` negatif → lebih gelap.
-
-**Implementasi (poin penting):**
-
-* Disarankan pakai `cv2.add(img, scalar)` karena `cv2.add` melakukan clipping otomatis ke 0..255 pada `uint8`.
-
-  ```python
-  bright = cv2.add(img, np.ones(img.shape, dtype=np.uint8) * k)
-  ```
-* Alternatif: manual pakai `np.clip(img.astype(int) + k, 0, 255).astype(np.uint8)`
-* `k` bisa diubah manual di kode. Jika ingin nilai negatif, lebih aman gunakan `np.int16` untuk operasi lalu clip.
-* Untuk warna, penambahan dilakukan per-channel sehingga warna relatif dipertahankan.
-
-**Histogram:**
-
-* Menambahkan brightness menggeser histogram ke kanan (untuk kenaikan k) atau kiri (untuk penurunan k).
-
-**Catatan praktis:**
-
-* Jangan gunakan `img + k` langsung pada `uint8` tanpa clip karena bisa terjadi overflow modulus.
-* Kompleksitas O(N).
+* Histogram akan terbalik secara horizontal relatif terhadap histogram asli (frekuensi intensitas `i` dipindah ke `k-i`).
 
 ---
 
-# 4) Contrast Stretching (Linear contrast stretching)
+# 3. Operasi Brightness (dengan variabel `k`, bisa negatif)
 
-**Tujuan:** memperbesar rentang intensitas citra sehingga memanfaatkan full 0–255 dan memperbaiki kontras.
+**Tujuan**
 
-**Rumus dasar (linear scaling):**
+* Mengubah kecerahan citra: `k` positif → mencerahkan, `k` negatif → menggelapkan.
 
-* Ambil nilai minimum `min_val` dan maksimum `max_val` dari citra (biasanya per channel atau untuk grayscale):
-  $I' = \frac{I - \text{min\_val}}{\text{max\_val} - \text{min\_val}} \times 255$
-* Hasil di-clip ke \[0,255] lalu di-cast ke `uint8`.
+**Rumus**
 
-**Implementasi (poin penting):**
+* `out = I + k`
+  (I: intensitas grayscale)
 
-* Jika `max_val == min_val`, hindari pembagian nol — kembalikan citra kosong atau salin citra asal.
+**Syarat awal**
 
-  ```python
-  if max_val == min_val:
-      cs = img.copy()
-  else:
-      cs = ((img - min_val) / (max_val - min_val) * 255).astype(np.uint8)
-  ```
-* Untuk gambar warna, bisa diterapkan pada tiap channel secara terpisah (split → stretch tiap channel → merge), atau konversi ke ruang warna yang memisahkan luminans (YCrCb/HSV) dan stretch hanya pada Y/V.
+* Konversi ke grayscale terlebih dahulu (seperti disyaratkan).
 
-**Histogram:**
+**Langkah implementasi**
 
-* Setelah stretching, histogram akan menyebar lebih merata di rentang \[0,255], meningkatkan kontras.
+1. Hitung `gray`.
+2. Tetapkan `k` (mis. `k = 40` untuk mencerahkan, `k = -40` untuk menggelapkan).
+3. Operasi dengan tipe yang aman: `bright = gray.astype(np.int16) + int(k)`.
+4. `bright = np.clip(bright, 0, 255).astype(np.uint8)`.
+5. Simpan dan tampilkan citra serta histogram.
 
-**Catatan praktis:**
+**Catatan penting**
 
-* Tidak mengubah distribusi relatif intensitas—hanya skala linear.
-* Biasanya bagus untuk citra yang memiliki rentang intensitas sempit.
+* Harus `clip` supaya tidak keluar dari rentang 0–255.
+* Jika `k` sangat besar (mis. >255) maka hasil hampir seluruhnya putih; jika sangat negatif (< -255) hampir seluruhnya hitam.
+* Pastikan `k` integer (atau cast ke `int`) untuk operasi array.
 
----
+**Saran nilai praktis**
 
-# 5) Histogram Equalization & Histogram Specification (Matching)
+* `k` di kisaran `-100` sampai `+100` biasanya memberikan efek yang terlihat tanpa merusak detail; tapi tergantung citra asli.
 
-**Tujuan:**
+**Harapan histogram**
 
-* **Histogram Equalization (HE):** membuat histogram citra lebih merata (meningkatkan kontras lokal/global) dengan memetakan intensitas melalui CDF.
-* **Histogram Specification (Matching):** mengubah histogram citra sehingga menyerupai histogram referensi.
-
-**Histogram Equalization (intuitif):**
-
-* Hitung histogram `h(i)` untuk i=0..255.
-* Hitung CDF: `cdf(i) = sum_{j=0..i} h(j)`.
-* Normalisasi: `cdf_norm(i) = round(255 * cdf(i) / cdf(255))`.
-* Mapping: setiap pixel dengan nilai `i` → `cdf_norm(i)`.
-
-**Implementasi (sederhana):**
-
-* Untuk grayscale cepat: `heq = cv2.equalizeHist(img)` (OpenCV built-in, tapi tetap dasar, bukan toolbox).
-* Untuk warna: pakai `YCrCb` atau `HSV` → equalize channel Y/V lalu konversi balik untuk menghindari shifting warna.
-
-**Histogram Specification (Matching) — langkah demi langkah:**
-
-1. Hitung CDF sumber: `cdf_s(i)` (dinormalisasi ke \[0,255]).
-2. Hitung CDF referensi: `cdf_r(j)` (dinormalisasi).
-3. Untuk setiap nilai intensitas `i` pada sumber, temukan nilai `j` pada referensi yang **meminimalkan |cdf\_s(i) - cdf\_r(j)|**. Itu mapping `M[i] = j`.
-4. Terapkan mapping: `out = M[src]`.
-
-**Kode ringkas mapping:**
-
-```python
-# asumsi hist dan cdf sudah ada dan ternormalisasi ke 0..255
-mapping = np.zeros(256, dtype=np.uint8)
-for i in range(256):
-    diff = np.abs(cdf_s[i] - cdf_r)
-    mapping[i] = np.argmin(diff)
-out = mapping[src]  # src adalah citra grayscale
-```
-
-**Histogram (visualisasi):**
-
-* Tampilkan histogram sebelum & sesudah untuk melihat efek.
-* Untuk histogram specification, bandingkan histogram hasil vs histogram referensi.
-
-**Catatan praktis & caveat:**
-
-* `cv2.equalizeHist` hanya untuk single channel (grayscale). Untuk warna, equalize luminance.
-* Histogram matching bisa membuat noise/artefak jika distribusi referensi sangat berbeda.
-* Mapping yang dibuat diskret → intensitas yang dihasilkan integer 0..255.
-* Jika referensi sama dengan sumber, mapping hampir identitas.
+* Seluruh histogram bergeser ke kanan jika `k` positif, ke kiri jika `k` negatif, bentuknya relatif sama kecuali karena clipping.
 
 ---
 
-# Umum: Penanganan channel & `split(img)`
+# 4. Contrast Stretching (Linear Contrast Stretch)
 
-**Mengapa `split(img)`?**
+**Tujuan**
 
-* `cv2.split(img)` memudahkan manipulasi tiap channel (B, G, R) tanpa toolbox lanjutan — sesuai permintaan Anda.
-* Contoh ringkas:
+* Memperluas rentang intensitas citra agar memanfaatkan full range 0–255. Membuat citra tampak lebih kontras.
 
-  ```python
-  b,g,r = cv2.split(img)
-  # manipulasi tiap channel, lalu:
-  result = cv2.merge([b_new, g_new, r_new])
-  ```
+**Rumus (linear mapping)**
 
-**Catatan:** setelah `split` dan manipulasi, gunakan `cv2.merge` untuk menyusun kembali.
+* Jika `minI = min(I)` dan `maxI = max(I)`, maka:
+  `out = (I - minI) / (maxI - minI) * 255`
+* Jika `maxI == minI` → citra seragam, tidak ada perubahan.
 
----
+**Langkah implementasi**
 
-# Histogram: detail plotting agar jelas perbedaan intensitas
+1. Konversi ke grayscale.
+2. Hitung `minI = gray.min()` dan `maxI = gray.max()`.
+3. Jika `maxI == minI`, hasil = copy(gray) (tidak ada stretching).
+4. Jika tidak, lakukan per-pixel:
+   `stretched = ((gray.astype(float) - minI) / (maxI - minI) * 255).round().astype(np.uint8)`
+5. Simpan dan tampilkan hasil + histogram.
 
-**Rekomendasi plotting:**
+**Catatan**
 
-* Untuk **citra warna (RGB/BGR)** — tampilkan histogram 3 channel terpisah (R,G,B) agar terlihat perbedaan:
+* Lakukan operasi dalam `float` agar tidak kehilangan presisi sebelum rounding.
+* Setelah mapping, histogram biasanya “tersebar” lebih luas, sehingga detail di bayangan/terang muncul.
+* Jika ada outlier sangat gelap/terang, `minI` atau `maxI` ekstrem bisa membuat sebagian besar piksel hanya sedikit berubah — pertimbangkan clipping/persentil (opsional) jika ingin mengabaikan outlier (tetapi user minta sederhana jadi gunakan min/max).
 
-  ```python
-  plt.hist(b.ravel(), bins=256, range=[0,256], color='b', alpha=0.5)
-  plt.hist(g.ravel(), bins=256, range=[0,256], color='g', alpha=0.5)
-  plt.hist(r.ravel(), bins=256, range=[0,256], color='r', alpha=0.5)
-  ```
-* Untuk **grayscale**, cukup satu histogram (bins=256).
-* Saat menampilkan citra asli dan hasil, selalu tampilkan juga histogram masing-masing agar perbandingan lebih informatif.
+**Harapan histogram**
 
----
-
-# Praktikal: dependencies & cara menjalankan
-
-**Instalasi:**
-
-```bash
-pip install opencv-python numpy matplotlib
-```
-
-**Menjalankan file contoh:**
-
-```bash
-python 1_rgb_to_grayscale.py
-python 2_negasi.py
-# dst...
-```
-
-**Sumber citra:** semua file mengakses `"apel.png"` di folder yang sama dengan script.
+* Histogram setelah stretching akan menempati hampir seluruh rentang 0–255; bentuk menjadi lebih melebar.
 
 ---
 
-# Tips debugging & edge case testing
+# 5. Histogram Equalization & Histogram Specification (Matching)
 
-* **Periksa path**: `apel.png` harus berada di direktori kerja atau gunakan path absolut.
-* **Cek `img is None`** setelah `cv2.imread()` untuk memastikan file terbaca.
-* **Periksa dtype**: `img.dtype` harus `uint8`. Jika bukan, adjust casting.
-* **Gunakan `cv2.imwrite()`** untuk menyimpan hasil jika ingin membandingkan secara offline.
-* **Gunakan `np.clip`** untuk mencegah overflow/underflow saat operasi aritmetik.
-* **Untuk warna saat equalizing**, prefer equalize pada channel luminance (contoh: Y pada YCrCb) supaya warna tidak berubah abnormal.
-* **Performa:** semua operasi linear O(N). Untuk gambar besar, proses akan memakan waktu linear terhadap jumlah piksel.
+**Tujuan**
+
+* **Histogram equalization**: redistribusi intensitas agar histogram menjadi lebih merata, meningkatkan kontras lokal di area dengan konsentrasi intensitas.
+* **Histogram specification (matching)**: ubah histogram citra sumber agar menyerupai histogram target yang ditentukan (mis. Gaussian, uniform, atau histogram citra lain).
+
+**A. Histogram equalization (manual) — langkah**
+
+1. Konversi ke grayscale.
+2. Hitung histogram: `hist, _ = np.histogram(gray.flatten(), bins=256, range=(0,255))`.
+3. Hitung PDF: `pdf = hist / hist.sum()`.
+4. Hitung CDF: `cdf = pdf.cumsum()`.
+5. Mapping (discrete): `map_eq = floor(255 * cdf).astype(np.uint8)`.
+   Ini menghasilkan pemetaan nilai sumber `r` → nilai baru `s = map_eq[r]`.
+6. Terapkan: `equalized = map_eq[gray]`.
+7. Simpan & tampilkan citra + histogram hasil.
+
+**Penjelasan mengapa ini bekerja**
+
+* CDF memberikan akumulasi probabilitas; mengalikan dengan 255 → pemetaan ke rentang penuh sehingga intensitas yang sering muncul dipindah agar tersebar.
+
+**Catatan implementasi**
+
+* Lakukan semua perhitungan numerik dalam `float64` atau `float32` untuk presisi.
+* Pemetaan menggunakan array lookup sangat efisien: `map_eq[gray]` (vectorized).
+
+**Harapan histogram**
+
+* Histogram hasil cenderung lebih merata (tergantung distribusi asli), visualnya sering meningkatkan kontras pada rentang yang kurang digunakan.
 
 ---
 
-# Saran perbaikan opsional (jika mau ditingkatkan nanti)
+**B. Histogram specification (matching) — langkah**
 
-* Buat fungsi umum untuk histogram plotting agar kode tidak duplikat.
-* Tambah GUI sederhana atau argparser sehingga `k` dapat dioper ke script via command line (`python 2_negasi.py --k 200`).
-* Implementasi contrast stretching per-channel atau memakai CLAHE (Contrast Limited AHE) untuk hasil lokal yang lebih baik (`cv2.createCLAHE()` — opsional, lebih advance).
-* Tambah visualisasi CDF (plot CDF) ketika menampilkan HE / matching agar pemahaman lebih baik.
+1. Konversi ke grayscale.
+2. Hitung `src_hist` → `src_pdf` → `src_cdf`.
+3. Tentukan `target_pdf` dan hitung `target_cdf` (target bisa dari citra lain atau di-generate, mis. Gaussian).
+4. Buat mapping `map_spec` sedemikian sehingga untuk setiap level `r`:
+
+   * cari `s` minimal yang memenuhi `target_cdf[s] >= src_cdf[r]`.
+     Di `numpy`: `s = np.searchsorted(target_cdf, src_cdf[r])`
+   * set `map_spec[r] = s` (clip `s` ke 0..255).
+5. Terapkan: `specified = map_spec[gray]`.
+6. Simpan & tampilkan.
+
+**Kenapa ini bekerja**
+
+* Kita melakukan transformasi sumber ke domain CDF (seperti equalization), lalu mereverse-map agar menyesuaikan distribusi dengan target. Intinya: padankan kuantiles.
+
+**Catatan praktis**
+
+* Jika target CDF memiliki plateau atau target PDF sangat sempit, beberapa `r` akan dipetakan ke nilai `s` yang sama → hasil posterisasi/tersegmentasi di nilai intensitas tertentu.
+* Untuk target PDF yang dihasilkan (mis. Gaussian), pastikan normalisasi (`target_pdf = target_pdf / target_pdf.sum()`).
+
+**Harapan histogram**
+
+* Histogram akhir mengikuti bentuk target (mis. menyerupai Gaussian target); kontras dan tonal akan berubah sesuai target.
 
 ---
 
-# Contoh ringkas mapping nilai `k` (penggunaan praktis)
+# Catatan umum untuk semua operasi (praktis & debugging)
 
-* **Negasi standar:** `k = 255`
-* **Negasi khusus (kurangi intensitas maksimum):** `k = 200` → akan membuat nilai terbalik relatif terhadap 200
-* **Brightness bertambah 50:** `k = 50` pada `cv2.add(img, k)`
-* **Brightness dikurangi 30:** `k = -30` → lakukan arithmetic dengan tipe signed + `np.clip`
+* **Gunakan `cv2.split()`** saat memisahkan kanal (sesuai permintaan). Ingat OpenCV membaca sebagai BGR, jadi `b,g,r = split(img)` kemudian gunakan `r,g,b` untuk rumus berbasis R,G,B.
+* **Tipe data**: konversi sementara ke `float`/`int16` saat operasi aritmetika, lalu `np.clip(...,0,255).astype(np.uint8)`.
+* **Histogram plotting**:
+
+  * `hist, bins = np.histogram(img.flatten(), bins=256, range=(0,255))`
+  * `bins_centers = (bins[:-1] + bins[1:]) / 2`
+  * `plt.plot(bins_centers, hist)` → diagram kartesius (bukan bar) seperti diminta.
+* **Clipping** wajib untuk operasi aritmetika (brightness, negasi, dll) agar tidak overflow/wraparound.
+* **Jangan banyak fungsi**: sesuai permintaan, lakukan langkah berurutan tanpa mendefinisikan banyak `def`.
+* **Simpan hasil** tiap file sesuai nomor (`grayscale_1.png`, `negasi_k.png`, dll) agar praktikum rapi.
+* **Performa**: semua operasi ini bersifat vektor dan O(N) terhadap jumlah piksel — cukup cepat untuk gambar biasa (ratusan KB–beberapa MB).
+* **Uji**: jalankan tiap file/skrip dan coba beberapa nilai `k` (mis. `k=255`, `k=40`, `k=-40`) untuk melihat efeknya.
+* **Edge cases**:
+
+  * Kontras stretching: jika `minI == maxI` → lewati operator atau kembalikan salinan.
+  * Histogram matching: jika `target_cdf` tidak naik monoton (seharusnya monoton non-decreasing) atau target tidak normal, normalisasikan dulu.
 
 ---
 
 Kalau Anda mau, saya bisa:
 
-* 1. **Satukan semua operasi ke satu file** dengan menu (pilih operasi), atau
-* 2. **Tambahkan argumen command line** sehingga `k`, nama file input/output, dan pilihan metode bisa diatur tanpa edit kode, atau
-* 3. **Tambahkan contoh output (gambar + histogram) untuk tiap operasi** (saya bisa bantu buatkan script yang menyimpan hasil).
+* Beri contoh nilai `k` yang direkomendasikan untuk praktikum (daftar singkat),
+* atau ringkas tiap langkah sebagai pseudocode singkat supaya mudah dimasukkan ke dalam skrip praktikum Anda.
 
-Mau saya lanjut ke salah satu opsi itu?
+Mau saya tambahkan contoh nilai `k` dan sedikit checklist praktikum (cek file ada, cek path, cek tipe)?
 
 
 ---
