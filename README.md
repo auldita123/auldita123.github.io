@@ -1,3 +1,65 @@
+library:
+Dalam praktikum **pengolahan citra dan computer vision**, Python punya banyak library populer yang sering dipakai. Berikut beberapa yang paling umum:
+
+---
+
+### 🔹 **Library Utama untuk Pengolahan Citra**
+
+1. **OpenCV (`cv2`)**
+
+   * Paling populer untuk *image processing* dan *computer vision*.
+   * Fitur: filtering, edge detection, face detection, object tracking, transformasi geometris, dll.
+   * Cocok untuk praktikum dasar sampai lanjut.
+
+2. **scikit-image**
+
+   * Bagian dari ekosistem *SciPy*.
+   * Fokus pada algoritma analisis citra: segmentasi, denoising, fitur, morfologi, dll.
+   * Lebih "pythonic" dan mudah dipahami dibanding OpenCV untuk pemula.
+
+3. **Pillow (PIL Fork)**
+
+   * Library sederhana untuk membaca, menulis, dan manipulasi gambar dasar (resize, crop, rotate, dll).
+   * Biasanya dipakai untuk tugas awal sebelum masuk ke OpenCV atau scikit-image.
+
+---
+
+### 🔹 **Library Pendukung**
+
+4. **NumPy**
+
+   * Hampir semua citra direpresentasikan sebagai array.
+   * Dipakai untuk operasi matematis cepat (misalnya filtering manual, konvolusi).
+
+5. **Matplotlib**
+
+   * Untuk menampilkan gambar, membuat histogram, dan visualisasi hasil olah citra.
+
+6. **SciPy**
+
+   * Ada modul `scipy.ndimage` untuk operasi filtering, morfologi, dan transformasi citra.
+
+---
+
+### 🔹 **Untuk Computer Vision Tingkat Lanjut**
+
+7. **TensorFlow** / **PyTorch**
+
+   * Digunakan kalau praktikum sudah masuk ke *deep learning* (CNN untuk klasifikasi/segmentasi).
+
+8. **Keras**
+
+   * High-level API di atas TensorFlow, mempermudah implementasi *deep learning*.
+
+---
+
+📌 **Kesimpulan untuk praktikum pengolahan citra dasar:**
+Biasanya dipakai kombinasi **OpenCV + NumPy + Matplotlib**, atau **scikit-image + Matplotlib**.
+
+Mau saya buatin contoh kode sederhana (misalnya membaca gambar, ubah jadi grayscale, lalu tampilkan hasilnya) pakai **OpenCV** dan **scikit-image** biar kelihatan perbedaan penggunaannya?
+
+
+
 Oke 👍, kita bahas **rumus operasi kontras** dalam pengolahan citra digital.  
 
 ---
